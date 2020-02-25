@@ -1,6 +1,6 @@
 # am_traj
 Alternating Minimization Based Trajectory Generation for Quadrotor Aggressive Flight
-__AM-Traj__ is a framework for generating large-scale piecewise polynomial trajectories for aggressive autonomous flights, with highlights on its superior computational efficiency and simultaneous spatial-temporal optimality. Besides, an extremely fast feasibility checker is designed for various kinds of constraints. All components in this framework leverage the algebraic convenience of polynomial trajectory optimization problem, thus our method is capable of computing spatial-temporal optimal trajectories with $60$ pieces within $5ms$, i.e., $150Hz$ at least.
+__AM-Traj__ is a framework for generating large-scale piecewise polynomial trajectories for aggressive autonomous flights, with highlights on its superior computational efficiency and simultaneous spatial-temporal optimality. Besides, an extremely fast feasibility checker is designed for various kinds of constraints. All components in this framework leverage the algebraic convenience of polynomial trajectory optimization problem, thus our method is capable of computing spatial-temporal optimal trajectories with $60$ pieces within 5ms, i.e., 150Hz at least.
 
 The source code will be available after the publication of the related paper.
 
@@ -19,5 +19,5 @@ __Related Paper__:
 <p align="center">
   <img src="misc/sv.gif" width = "427" height = "240"/>
 
-  <img src="misc/fpv.gif" width = "267" height = "240"/>
+  <img src="misc/fpv.gif" width = "427" height = "240"/>
 </p>
