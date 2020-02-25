@@ -5,7 +5,7 @@ __am_traj__ is a framework for generating large-scale piecewise polynomial traje
 
 The source code will be available after the publication of the related paper.
 
-__Author__: Zhepei Wang from the [ZJU Fast Lab](http://www.kivact.com/).
+__Author__: Zhepei Wang, and [Fei Gao](https://ustfei.com/) from the [ZJU Fast Lab](http://www.kivact.com/).
 
 __Related Paper__:
 - __Alternating Minimization Based Trajectory Generation for Quadrotor Aggressive Flight__, Zhepei Wang, Xin Zhou, Chao Xu, Jian Chu, and Fei Gao, submitted to RA-L/IROS 2020.
