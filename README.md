@@ -8,7 +8,7 @@ The source code will be available after the publication of the related paper.
 __Author__: Zhepei Wang and [Fei Gao](https://ustfei.com/) from the [ZJU Fast Lab](http://www.kivact.com/).
 
 __Related Paper__:
-- __Alternating Minimization Based Trajectory Generation for Quadrotor Aggressive Flight__, Zhepei Wang, Xin Zhou, Chao Xu, Jian Chu, and Fei Gao, submitted to RA-L/IROS 2020.
+- [__Alternating Minimization Based Trajectory Generation for Quadrotor Aggressive Flight__](https://arxiv.org/abs/2002.10629), Zhepei Wang, Xin Zhou, Chao Xu, Jian Chu, and Fei Gao, submitted to RA-L/IROS 2020.
 - [__Detailed Proofs of Alternating Minimization Based Trajectory Generation for Quadrotor Aggressive Flight__](https://arxiv.org/abs/2002.09254), Zhepei Wang, Xin Zhou, Chao Xu, and Fei Gao, the supplementary material.
 
 [__Video__](https://youtu.be/ayoQ7i1Lz5s):
