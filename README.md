@@ -177,7 +177,7 @@ Two examples are provided in this repository.
   Example 1 contains a complete global planner simulation procedure. In this example, we adopt an RRT* based waypoints selector proposed by [Richter et al.](https://doi.org/10.1177/0278364914558129). Based on the selector, we use our library to generate a optimal feasible trajectory. The whole planner is able to do global traejctory generation in real time.
 
 <p align="center">
-  <img src="misc/example1.gif" width = "533" height = "300"/>
+  <img src="misc/example1.gif" width = "534" height = "300"/>
 </p>
 
 - Building
