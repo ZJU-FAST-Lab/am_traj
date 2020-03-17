@@ -1,0 +1,216 @@
+<launch>
+<arg name="drone_number"    default="1"/>
+<arg name="simulation"      default="true"/>
+<arg name="yaw"             default="true"/>
+
+<arg name="map_size_x" default="30.0"/>
+<arg name="map_size_y" default="30.0"/>
+<arg name="map_size_z" default="5.0"/>
+
+<arg name="init_x" default="-8.5"/>
+<arg name="init_y" default="-8.5"/>
+<arg name="init_z" default=" 0.0"/>
+
+<arg name="manual_botton" default="6"/>
+<arg name="auto_botton"   default="7"/>
+
+<!-- Simulator-->
+<node pkg="so3_quadrotor_simulator"
+      type="quadrotor_simulator_so3"
+      name="quadrotor_simulator_so3_$(arg drone_number)"
+      output="screen">
+  <param name="rate/odom" value="100.0"/>
+
+  <param name="simulator/init_state_x" value="$(arg init_x)"/>
+  <param name="simulator/init_state_y" value="$(arg init_y)"/>
+  <param name="simulator/init_state_z" value="$(arg init_z)"/>
+  <remap from="~odom" to="drone_$(arg drone_number)/visual_slam/odom"/>
+  <remap from="~cmd" to="drone_$(arg drone_number)/so3_command"/>
+  <remap from="~imu" to="drone_$(arg drone_number)/sim/imu"/>
+  <remap from="~force_disturbance" to="drone_$(arg drone_number)/force_disturbance"/>
+  <remap from="~moment_disturbance" to="drone_$(arg drone_number)/moment_disturbance"/>
+</node>
+
+<!-- Missions-->
+<node pkg="nodelet"
+      type="nodelet"
+      args="standalone router/RouterNode"
+      name="RouterNode_$(arg drone_number)"
+      required="true"
+      output="screen">
+
+    <param name="input" value="/position_cmd_input"/>
+
+    <remap from="~poller" to="state_machine_node_$(arg drone_number)/mission/trigger"/>
+    <remap from="~enable" to="state_machine_node_$(arg drone_number)/rc/mission"/>
+    <remap from="~joy"    to="joy"/>
+    <remap from="~odom"   to="/vins_estimator_$(arg drone_number)/imu_propagate"/>
+    <remap from="~position_command" to="/drone_$(arg drone_number)/position_cmd"/>
+</node>
+
+<node pkg="nodelet"
+      type="nodelet"
+      args="standalone mission_template/MissionTemplateNode"
+      name="MissionTemplateNode_$(arg drone_number)"
+      required="true"
+      output="screen">
+
+    <remap from="~poller" to="state_machine_node_$(arg drone_number)/mission/trigger"/>
+    <remap from="~enable" to="state_machine_node_$(arg drone_number)/rc/mission"/>
+    <remap from="~joy"    to="joy"/>
+    <remap from="~odom"   to="drone_$(arg drone_number)/visual_slam/odom"/>
+    <remap from="~position_command" to="/drone_$(arg drone_number)/position_cmd"/>
+</node>
+
+<node pkg="state_machine" type="state_machine_node" name="state_machine_node_$(arg drone_number)" output="screen">
+    <param name="simulation"    type="bool" value="$(arg simulation)" />
+    <param name="mission/button_A"          value="RouterNode" />
+    <param name="mission/button_B"          value="RouterNode" />
+    <param name="mission/init_mission"      value="2" />
+    <param name="drone_id"                  value="$(arg drone_number)"/>
+    <param name="yaw"           type="bool" value="$(arg yaw)"/>
+    <param name="horizontal_gain"           value="1.2"/>
+    <param name="vertical_gain"             value="1.2"/>
+    <param name="yaw_gain"                  value="0.8"/>
+
+    <!-- You may need to re-map these buttons if you use different joystick -->
+    <param name="joymap_thrust"             value="1"/>  <!-- up/down -->
+    <param name="joymap_yaw"                value="0"/>  <!-- yaw/rotate left and right -->
+    <param name="joymap_pitch"              value="4"/>  <!-- move forward/backward -->
+    <param name="joymap_roll"               value="3"/>  <!-- move left/right -->
+
+    <param name="joymap_start"              value="arg auto_botton"/>  <!-- start autonomous mode/tracking trajectory/repeating -->
+    <param name="joymap_back"               value="arg manual_botton"/>  <!-- return mannual mode/mannualy controlling/repeating -->
+
+    <remap from="~odom"         to="drone_$(arg drone_number)/visual_slam/odom"/>
+    <remap from="~rc/position"  to="drone_$(arg drone_number)/position_cmd"/>
+    <remap from="~rc_input"     to="joy"/>
+    <remap from="/dji_sdk/action/motor_switch"  to="/dji_sdk_$(arg drone_number)/action/motor_switch"/>
+    <remap from="/dji_sdk/action/authority"     to="/dji_sdk_$(arg drone_number)/action/authority"/>
+    <remap from="/dji_sdk/action/flight_task"   to="/dji_sdk_$(arg drone_number)/action/flight_task"/>
+    <remap from="~/dji_sdk/rc" to="/dji_sdk_$(arg drone_number)/dji_sdk/rc"/>
+    <remap from="~/dji_sdk/control_device" to="/dji_sdk_$(arg drone_number)/dji_sdk/control_device"/>
+    <remap from="/sdk/flight_status" to="/dji_sdk_$(arg drone_number)/dji_sdk_flight_status"/>
+</node>
+
+<!-- Controller -->
+<node pkg="nodelet"
+      type="nodelet"
+      args="standalone cascade_controller/CascadeControllerNode"
+      name="cascade_control_$(arg drone_number)"
+      required="true"
+      output="screen">
+      <!--parameters-->"
+      <param name="simulation" type="bool" value="$(arg simulation)" />
+      <param name="quadrotor_name" value="test" />
+      <!--parameters for simulator, useless-->
+      <param name="gains/rot/x"    value="1.5" />
+      <param name="gains/rot/y"    value="1.5" />
+      <param name="gains/rot/z"    value="1.0" />
+      <param name="gains/ang/x"    value="0.13" />
+      <param name="gains/ang/y"    value="0.13" />
+      <param name="gains/ang/z"    value="0.1" />
+      <param name="corrections/z"  value="0" />
+      <param name="corrections/r"  value="0" />
+      <param name="corrections/p"  value="0" />
+      <!--parameters for modeling-->
+      <param name="mass"    value="0.98" /><!--unit kg-->
+
+      <!--parameters for controller internal parameter-->
+      <rosparam>
+      <!--attention param will always exist until roscore shutdown-->
+      #controller coeff:    [p,i,d] x [x,y,z]
+      position_coeff:       [  3.30,  0.0025, 0.0001,   3.30,  0.0025,  0.0001,   3.50, 0.0025, 0.0101]
+      velocity_coeff:       [  2.00,  0.0005, 0.0050,   2.00,  0.0005,  0.0050,   2.80, 0.0010, 0.0100]
+      acceleration_coeff:   [  0.10,  0.0000, 0.0000,   0.10,  0.0000,  0.0010,   0.10, 0.0000, 0.0000]
+      #output limitation:   [max, min, intergration_threshold] x [x,y,z]
+      position_limit:       [   50, -50,    0.1,     50,   -50,    0.1,50,   -50,    0.1]
+      velocity_limit:       [   50, -50,    0.1,     50,   -50,    0.1,50,   -50,    0.1]
+      acceleration_limit:   [   50, -50,    0.1,     50,   -50,    0.1,50,   -50,    0.1]
+      </rosparam>
+
+      <!--subscribers-->
+      <remap from="~position_command" to="drone_$(arg drone_number)/position_cmd"/> <!--linked to planner-->
+      <remap from="~odom_correction"  to="drone_$(arg drone_number)/odom_correction"/>
+      <remap from="~odom"             to="drone_$(arg drone_number)/visual_slam/odom"/>
+      <remap from="~imu_world"        to="drone_$(arg drone_number)/sim/imu"/>
+      <remap from="~view"             to="/view"/>
+      <remap from="~thrust"           to="drone_$(arg drone_number)/thrust"/>
+
+      <!--publisher-->
+      <remap from="~debug/velocity_error"       to="/debug/velocity_error"/>
+      <remap from="~debug/acceleration_desire"  to="/debug/acceleration_desire"/>
+      <remap from="~debug/euler_angles"         to="/debug/euler_angles"/>
+      <remap from="~so3_command"       to="drone_$(arg drone_number)/so3_command"/>
+      <remap from="~palstance_command" to="drone_$(arg drone_number)/palstance_command"/>
+      <remap from="~attitude_command"  to="dji_sdk_$(arg drone_number)/dji_sdk/flight_control_setpoint_generic"/>
+      <remap from="~translation_error" to="drone_$(arg drone_number)/translation_error"/>
+      <remap from="~sdk/flight_status" to="dji_sdk_$(arg drone_number)/dji_sdk/flight_status"/>
+</node>
+
+<!-- Visualization -->
+<node pkg="odom_visualization"
+      name="odom_visualization_$(arg drone_number)"
+      type="odom_visualization"
+      output="screen">
+  <remap from="~odom"            to="drone_$(arg drone_number)/visual_slam/odom"/>
+  <remap from="~odom_world"      to="/all_odom"/>
+  <param name="base_frame"       value="/odom"/>
+  <param name="target_frame"     value="/odom"/>
+  <param name="tf45"             value="true"/>
+  <param name="tfc"              value="false"/>
+  <param name="color/a"          value="1.0"/>
+  <param name="color/r"          value="1.0"/>
+  <param name="color/g"          value="1.0"/>
+  <param name="color/b"          value="1.0"/>
+  <param name="covariance_scale" value="100.0"/>
+  <param name="drone_scale"      value="0.8"/>
+  <param name="id"               value="$(arg drone_number)"/>
+</node>
+
+ <node name="rviz" pkg="rviz" type="rviz" output="screen"
+       args="-d $(find cascade_controller)/cfg/rviz_config.rviz"> 
+</node>
+
+<!-- Joy Node -->
+<!-- <node pkg="joy" type="joy_node" name="joy" output="screen"> -->
+<!-- </node> -->
+
+<!-- Trajectory Server -->
+<node pkg="traj_server" type="traj_server_node" name="traj_server" output="screen">
+  <!-- node parameters -->
+    <param name="joymap_auto"              value="arg auto_botton"/>  <!-- start autonomous mode/tracking trajectory/repeating -->
+    <param name="joymap_manual"               value="arg manual_botton"/>  <!-- return mannual mode/mannualy controlling/repeating -->
+
+  <remap from="~position_command"  to="/position_cmd_input"/>
+  <remap from="~joy"  to="/joy"/>
+  <remap from="~odometry"  to="/drone_$(arg drone_number)/visual_slam/odom"/>
+</node>
+
+<!-- Random Map Generator -->
+<node pkg ="map_generator" name ="random_complex" type ="random_complex" output = "screen">    
+    <remap from="~odometry"       to="/drone_1/visual_slam/odom"/>
+
+    <param name="init_state_x"   value="$(arg init_x)"/>
+    <param name="init_state_y"   value="$(arg init_y)"/>
+
+    <param name="map/x_size"     value="$(arg map_size_x)" />
+    <param name="map/y_size"     value="$(arg map_size_y)" />
+    <param name="map/z_size"     value="$(arg map_size_z)" />
+
+    <param name="map/circle_num" value="60"/>        
+    <param name="map/obs_num"    value="200"/>        
+    <param name="map/resolution" value="0.1"/>        
+
+    <param name="ObstacleShape/lower_rad" value="0.1"/>
+    <param name="ObstacleShape/upper_rad" value="0.7"/>
+    <param name="ObstacleShape/lower_hei" value="1.0"/>
+    <param name="ObstacleShape/upper_hei" value="2.5"/>
+
+    <param name="CircleShape/lower_circle_rad"   value="0.6"/>        
+    <param name="CircleShape/upper_circle_rad"   value="3.5"/>        
+    
+    <param name="sensing/rate"   value="3.0"/>        
+</node>
+
+</launch>
