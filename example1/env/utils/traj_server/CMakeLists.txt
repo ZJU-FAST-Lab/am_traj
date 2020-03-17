@@ -17,7 +17,7 @@ find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED)
 
 catkin_package(
-  INCLUDE_DIRS include
+  # INCLUDE_DIRS include
 )
 
 include_directories(
