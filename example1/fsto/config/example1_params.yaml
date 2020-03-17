@@ -1,0 +1,48 @@
+# Topics Subscribed
+OdomTopic:                  '/drone_1/visual_slam/odom'
+ImuTopic:                   '/drone_1/sim/imu'
+                            # ImuTopic is body acc provided by simulator, with g removed
+MapTopic:                   '/random_complex/global_map'
+TargetTopic:                '/move_base_simple/goal'
+TrajTriggerTopic:           '/traj_start_trigger'
+
+# Topics Advertised
+TrajectoryTopic:            '/traj_server/trajectory'
+AutoManualTopic:            '/traj_server/auto_manual'
+
+# Frame Names
+OdomFrame:                  'odom'
+
+# Params
+UnitScaleInSI:               1.0
+
+R3SafeRadius:                0.45
+
+BodySafeRadius:              0.30
+
+EdfResolution:               0.08
+
+R3Bound:                     [-16.0, 16.0, -16.0, 16.0, 0.0, 4.0]
+                             # [xmin, xmax, ymin, ymax, zmin, zmax]
+
+SearchDuration:              0.10
+
+TryOut:                      7
+
+MaxAccRate:                  4.00
+
+MaxVelRate:                  7.00
+
+WeightT:                     1024.0
+
+WeightAcc:                   16.0
+
+WeightJerk:                  0.4
+
+Iterations:                  23
+
+TemporalResolution:          0.02
+
+SpatialResolution:           0.05
+
+Epsilon:                     0.02

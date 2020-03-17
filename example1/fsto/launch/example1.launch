@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+
+    <include file="$(find cascade_controller)/launch/simulator.launch"/>
+
+    <node pkg="example1" type="example1_node" name="example1" output="screen">
+        <!-- node parameters -->
+        <rosparam file="$(find example1)/config/example1_params.yaml" command="load" />
+    </node>
+</launch>
