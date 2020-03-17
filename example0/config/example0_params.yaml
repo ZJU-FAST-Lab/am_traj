@@ -1,0 +1,23 @@
+# Topics Advertised
+TrajectoryTopic:            '/example0/trajectory'
+WayPointsTopic:             '/example0/waypoints'
+RouteTopic:                 '/example0/route'
+AccTopic:                   '/example0/acc'
+
+# Frame Name
+FrameName:                  'world'
+
+# Params
+WeightT:                     1024.0
+
+WeightAcc:                   16.0
+
+WeightJerk:                  0.4
+
+MaxAccRate:                  4.00
+
+MaxVelRate:                  7.00
+
+Iterations:                  23
+
+Epsilon:                     0.02
