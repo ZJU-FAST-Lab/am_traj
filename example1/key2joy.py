@@ -14,7 +14,7 @@ def main():
     window_size = Rect(0, 0, 691, 272)
     screen = pygame.display.set_mode(window_size.size)
 
-    img = pygame.image.load("./src/example1/keymap/keyboard3.jpg")
+    img = pygame.image.load("./src/am_traj/example1/keymap/keyboard3.jpg")
 
     # initialize ros publisher
     twist_pub = rospy.Publisher('keyboard/twist', Twist, queue_size=10)
