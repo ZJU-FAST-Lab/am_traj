@@ -152,7 +152,7 @@ Two examples are provided in this repository.
 
 - Building
 
-  To build this example, first make sure you have [ROS](http://wiki.ros.org/melodic/Installation/Ubuntu) properly installed. Desktop-full install is recommended. Second, clone this repository into the __src__ directory of your ROS workspace. __Move the example1 directory to somewhere else__, because we only consider the building of example0 here. Use the following command to install Boost and Eigen if they are not ready.
+  To build this example, first make sure you have [ROS](http://wiki.ros.org/melodic/Installation/Ubuntu) properly installed. Desktop-full install is recommended. Second, clone this repository into the __src__ directory of your ROS workspace. Rename it am_traj then __move the example1 subdirectory to somewhere else__, because we only consider the building of example0 here. Use the following command to install Boost and Eigen if they are not ready.
   
       sudo apt install libboost-dev libeigen3-dev
   
@@ -195,7 +195,7 @@ Two examples are provided in this repository.
       make
       sudo make install
   
-  Third, clone this repository into the __src__ directory of your ROS workspace. Now cd into your current ROS workspace.
+  Third, clone this repository into the __src__ directory of your ROS workspace. Rename it am_traj. Now cd into your current ROS workspace.
 
       catkin_make
 
