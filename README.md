@@ -210,7 +210,7 @@ Two examples are provided in this repository.
   Open a new terminal in your current ROS workspace and then
 
       source devel/setup.bash
-      python src/example1/key2joy.py
+      python src/am_traj/example1/key2joy.py
 
   Now you can see an rviz window and a pygame window, which are shown below.
 
