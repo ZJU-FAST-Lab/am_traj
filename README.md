@@ -252,3 +252,11 @@ Two examples are provided in this repository.
 - The library will support optimizing waypoints in the future, following the general framework in our paper. However, the spatial constraints depend on specific planning method. Therefore, feel free to modify all codes in the library if you need to optimize waypoints.
 
 - Thanks [Helen Oleynikova](https://github.com/helenol) et al. a lot for their [open-source project](https://github.com/ethz-asl/mav_trajectory_generation). In our benchmark, some modules in compared methods are modified from their projects.
+
+## 6. Licence
+The source code is released under [GPLv3](http://www.gnu.org/licenses/) license.
+
+## 7. Maintaince
+For any technical issues, please contact Zhepei WANG (<wangzhepei@zju.edu.cn>) or Fei GAO (<fgaoaa@connect.ust.hk>).
+
+For commercial inquiries, please contact Fei GAO (<fgaoaa@connect.ust.hk>).
