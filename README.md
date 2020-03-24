@@ -182,7 +182,7 @@ Two examples are provided in this repository.
 
 - Building
 
-  To build this example, first make sure you have ROS, Boost, Eigen, and GCC 7 properly installed as described in previous example. Some parts of the simulation require GCC 7. Therefore, if your GCC version is below the required version, the following commands help you install it without changing your default compiler.
+  To build this example, first make sure you have ROS, Boost, and Eigen properly installed as described in previous example. Moreover, some parts of the simulation require GCC 7. Therefore, if your GCC version is below the required version, the following commands help you install it without changing your default compiler.
   
       sudo apt-get install -y gcc-7 g++-7 && sleep 0.2;
       sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60 --slave /usr/bin/g++ g++ /usr/bin/g++-5 && sleep 0.2;
