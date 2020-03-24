@@ -2,7 +2,7 @@
 
 Alternating Minimization Based Trajectory Generation for Quadrotor Aggressive Flight
 
-__Feature Coming Soon__: Check the maximum curvature of the trajectory.
+__Feature Coming Soon__: Check the maximum curvature constraint of a trajectory.
 
 ## 0. About
 
