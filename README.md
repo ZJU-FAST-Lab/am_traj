@@ -188,7 +188,7 @@ Two examples are provided in this repository.
       sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60 --slave /usr/bin/g++ g++ /usr/bin/g++-5 && sleep 0.2;
       sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 50 --slave /usr/bin/g++ g++ /usr/bin/g++-7;
   
-  Second, use the following command to install [PyGame](https://www.pygame.org/) and [OMPL](https://ompl.kavrakilab.org/).
+  Second, use the following commands to install [PyGame](https://www.pygame.org/) and [OMPL](https://ompl.kavrakilab.org/).
 
       sudo apt install python-pygame
       cd ~/Desktop/
