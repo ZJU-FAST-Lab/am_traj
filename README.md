@@ -81,10 +81,10 @@ Only three functions below are needed.
     Eigen::Vector3d iV(2.0, 1.0, 0.0), fV(0.0, 0.0, 0.0)
     Eigen::Vector3d iA(0.0, 0.0, 2.0), fA(0.0, 0.0, 0.0)
     std::vector<Eigen::Vector3d> wPs;
-    wayPoints.emplace_back(0.0, 0.0, 0.0);
-    wayPoints.emplace_back(4.0, 2.0, 1.0);
-    wayPoints.emplace_back(9.0, 7.0, 5.0);
-    wayPoints.emplace_back(1.0, 3.0, 2.0);
+    wPs.emplace_back(0.0, 0.0, 0.0);
+    wPs.emplace_back(4.0, 2.0, 1.0);
+    wPs.emplace_back(9.0, 7.0, 5.0);
+    wPs.emplace_back(1.0, 3.0, 2.0);
     Trajectory traj = amTrajOpt.genOptimalTrajDT(wPs, iV, iA, fV, fA);
 
 ### __Constrained Spatial-Temporal Optimization__
@@ -108,10 +108,10 @@ Only three functions below are needed.
     Eigen::Vector3d iV(2.0, 1.0, 0.0), fV(0.0, 0.0, 0.0)
     Eigen::Vector3d iA(0.0, 0.0, 2.0), fA(0.0, 0.0, 0.0)
     std::vector<Eigen::Vector3d> wPs;
-    wayPoints.emplace_back(0.0, 0.0, 0.0);
-    wayPoints.emplace_back(4.0, 2.0, 1.0);
-    wayPoints.emplace_back(9.0, 7.0, 5.0);
-    wayPoints.emplace_back(1.0, 3.0, 2.0);
+    wPs.emplace_back(0.0, 0.0, 0.0);
+    wPs.emplace_back(4.0, 2.0, 1.0);
+    wPs.emplace_back(9.0, 7.0, 5.0);
+    wPs.emplace_back(1.0, 3.0, 2.0);
     Trajectory traj = amTrajOpt.genOptimalTrajDTC(wPs, iV, iA, fV, fA);
 
 ### __The Others__
