@@ -421,7 +421,7 @@ public:
 
     // Two corresponding constructors of Piece both are supported here
     template <typename ArgTypeL, typename ArgTypeR>
-    void emplace_back(const ArgTypeL &argL, const ArgTypeR &argR)
+    inline void emplace_back(const ArgTypeL &argL, const ArgTypeR &argR)
     {
         pieces.emplace_back(argL, argR);
         return;
