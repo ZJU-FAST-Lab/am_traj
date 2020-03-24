@@ -13,6 +13,7 @@ namespace RootFinderParam
 {
 
 constexpr size_t highestOrder = 64;
+
 }
 
 namespace RootFinderPriv
