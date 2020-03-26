@@ -11,9 +11,7 @@
 
 namespace RootFinderParam
 {
-
 constexpr size_t highestOrder = 64;
-
 }
 
 namespace RootFinderPriv
@@ -73,13 +71,28 @@ inline double polyEval(double *p, int len, double x)
 // cancellation (subtracting two nearby numbers) is guaranteed to occur.
 // Therefore, Horner scheme may slow down some root-finding algorithms.
 {
-    double xn = 1.0;
     double retVal = 0.0;
 
-    for (int i = len - 1; i >= 0; i--)
+    if (fabs(x) < DBL_EPSILON)
     {
-        retVal += p[i] * xn;
-        xn *= x;
+        retVal = p[len - 1];
+    }
+    else if (x == 1.0)
+    {
+        for (int i = len - 1; i >= 0; i--)
+        {
+            retVal += p[i];
+        }
+    }
+    else
+    {
+        double xn = 1.0;
+
+        for (int i = len - 1; i >= 0; i--)
+        {
+            retVal += p[i] * xn;
+            xn *= x;
+        }
     }
 
     return retVal;
@@ -646,6 +659,75 @@ inline Eigen::VectorXd polyConv(const Eigen::VectorXd &lCoef, const Eigen::Vecto
     return result;
 }
 
+// // This function needs FFTW 3 and only performs better when the scale is large
+// inline Eigen::VectorXd polyConvFFT(const Eigen::VectorXd &lCoef, const Eigen::VectorXd &rCoef)
+// // Calculate the convolution of lCoef(x) and rCoef(x) using FFT
+// // This function is fast when orders of both poly are larger than 100
+// {
+//     int paddedLen = lCoef.size() + rCoef.size() - 1;
+//     int complexLen = paddedLen / 2 + 1;
+//     Eigen::VectorXd result(paddedLen);
+//     double *rBuffer = fftw_alloc_real(paddedLen);
+//     // Construct FFT plan and buffers
+//     fftw_complex *cForwardBuffer = fftw_alloc_complex(complexLen);
+//     fftw_complex *cBackwardBuffer = fftw_alloc_complex(complexLen);
+//     fftw_plan forwardPlan = fftw_plan_dft_r2c_1d(paddedLen, rBuffer, cForwardBuffer,
+//                                                  FFTW_ESTIMATE | FFTW_DESTROY_INPUT);
+//     fftw_plan backwardPlan = fftw_plan_dft_c2r_1d(paddedLen, cBackwardBuffer, rBuffer,
+//                                                   FFTW_ESTIMATE | FFTW_DESTROY_INPUT);
+//     // Pad lCoef by zeros
+//     int len = lCoef.size();
+//     for (int i = 0; i < len; i++)
+//     {
+//         rBuffer[i] = lCoef(i);
+//     }
+//     for (int i = len; i < paddedLen; i++)
+//     {
+//         rBuffer[i] = 0.0;
+//     }
+//     // Compute fft(pad(lCoef(x)) and back it up
+//     fftw_execute(forwardPlan);
+//     memcpy(cBackwardBuffer, cForwardBuffer, sizeof(fftw_complex) * complexLen);
+//     // Pad rCoef by zeros
+//     len = rCoef.size();
+//     for (int i = 0; i < len; i++)
+//     {
+//         rBuffer[i] = rCoef(i);
+//     }
+//     for (int i = len; i < paddedLen; i++)
+//     {
+//         rBuffer[i] = 0.0;
+//     }
+//     // Compute fft(pad(rCoef(x))
+//     fftw_execute(forwardPlan);
+//     // Compute fft(pad(lCoef(x)).fft(pad(rCoef(x))
+//     double real, imag;
+//     for (int i = 0; i < complexLen; i++)
+//     {
+//         real = cBackwardBuffer[i][0];
+//         imag = cBackwardBuffer[i][1];
+//         cBackwardBuffer[i][0] = real * cForwardBuffer[i][0] -
+//                                 imag * cForwardBuffer[i][1];
+//         cBackwardBuffer[i][1] = imag * cForwardBuffer[i][0] +
+//                                 real * cForwardBuffer[i][1];
+//     }
+//     // Compute ifft(fft(pad(lCoef(x)).fft(pad(rCoef(x)))
+//     fftw_execute(backwardPlan);
+//     // Recover the original intensity
+//     double intensity = 1.0 / paddedLen;
+//     for (int i = 0; i < paddedLen; i++)
+//     {
+//         result(i) = rBuffer[i] * intensity;
+//     }
+//     // Destruct FFT plan and buffers
+//     fftw_destroy_plan(forwardPlan);
+//     fftw_destroy_plan(backwardPlan);
+//     fftw_free(rBuffer);
+//     fftw_free(cForwardBuffer);
+//     fftw_free(cBackwardBuffer);
+//     return result;
+// }
+
 inline Eigen::VectorXd polySqr(const Eigen::VectorXd &coef)
 // Calculate self-convolution of coef(x)
 {
@@ -688,23 +770,36 @@ inline double polyVal(const Eigen::VectorXd &coeffs, double x,
 // Stable one should be used when coeffs(x) is close to 0.0
 {
     double retVal = 0.0;
-    if (numericalStability)
-    {
-        double xn = 1.0;
-        int order = (int)coeffs.size() - 1;
+    int order = (int)coeffs.size() - 1;
 
-        for (int i = order; i >= 0; i--)
-        {
-            retVal += coeffs(i) * xn;
-            xn *= x;
-        }
+    if (fabs(x) < DBL_EPSILON)
+    {
+        retVal = coeffs(order);
+    }
+    else if (x == 1.0)
+    {
+        retVal = coeffs.sum();
     }
     else
     {
-        int len = coeffs.size();
-        for (int i = 0; i < len; i++)
+        if (numericalStability)
         {
-            retVal = retVal * x + coeffs(i);
+            double xn = 1.0;
+
+            for (int i = order; i >= 0; i--)
+            {
+                retVal += coeffs(i) * xn;
+                xn *= x;
+            }
+        }
+        else
+        {
+            int len = coeffs.size();
+
+            for (int i = 0; i < len; i++)
+            {
+                retVal = retVal * x + coeffs(i);
+            }
         }
     }
 
