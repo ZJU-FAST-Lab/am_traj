@@ -22,40 +22,48 @@ class Piece
 {
 private:
     // Piece(t) = c5*t^5 + c4*t^4 + ... + c1*t + c0
+    // The natural coefficient matrix = [c5,c4,c3,c2,c1,c0]
     double duration;
-    // coeffMat = [c5,c4,c3,c2,c1,c0]
-    CoefficientMat coeffMat;
+    // Any time in [0, T] is normalized into [0.0, 1.0]
+    // Therefore, nCoeffMat = [c5*T^5,c4*T^4,c3*T^3,c2*T^2,c1*T,c0*1]
+    // is used for better numerical stability
+    CoefficientMat nCoeffMat;
 
 public:
     Piece() = default;
 
     // Constructor from duration and coefficient
-    Piece(double dur, CoefficientMat coeffs) : duration(dur), coeffMat(coeffs) {}
+    Piece(double dur, CoefficientMat coeffs) : duration(dur)
+    {
+        double t = 1.0;
+        for (int i = TrajOrder; i >= 0; i--)
+        {
+            nCoeffMat.col(i) = coeffs.col(i) * t;
+            t *= dur;
+        }
+    }
 
     // Constructor from boundary condition and duration
     Piece(BoundaryCond boundCond, double dur) : duration(dur)
     {
         // The BoundaryCond matrix boundCond = [p(0),v(0),a(0),p(T),v(T),a(T)]
         double t1 = dur;
-        double t1_inv = 1.0 / t1;
-        double t2_inv = t1_inv / t1;
-        double t3_inv = t2_inv / t1;
-        double t4_inv = t3_inv / t1;
-        double t5_inv = t4_inv / t1;
+        double t2 = t1 * t1;
 
-        // Inverse mapping is computed with no explicit matrix inverse
-        coeffMat.col(0) = 0.5 * (boundCond.col(5) - boundCond.col(2)) * t3_inv -
-                          3.0 * (boundCond.col(1) + boundCond.col(4)) * t4_inv +
-                          6.0 * (boundCond.col(3) - boundCond.col(0)) * t5_inv;
-        coeffMat.col(1) = (-boundCond.col(5) + 1.5 * boundCond.col(2)) * t2_inv +
-                          (8.0 * boundCond.col(1) + 7.0 * boundCond.col(4)) * t3_inv +
-                          15.0 * (-boundCond.col(3) + boundCond.col(0)) * t4_inv;
-        coeffMat.col(2) = (0.5 * boundCond.col(5) - 1.5 * boundCond.col(2)) * t1_inv -
-                          (6.0 * boundCond.col(1) + 4.0 * boundCond.col(4)) * t2_inv +
-                          10.0 * (boundCond.col(3) - boundCond.col(0)) * t3_inv;
-        coeffMat.col(3) = 0.5 * boundCond.col(2);
-        coeffMat.col(4) = boundCond.col(1);
-        coeffMat.col(5) = boundCond.col(0);
+        // Inverse mapping is computed without explicit matrix inverse
+        // It maps boundary condition to normalized coefficient matrix
+        nCoeffMat.col(0) = 0.5 * (boundCond.col(5) - boundCond.col(2)) * t2 -
+                           3.0 * (boundCond.col(1) + boundCond.col(4)) * t1 +
+                           6.0 * (boundCond.col(3) - boundCond.col(0));
+        nCoeffMat.col(1) = (-boundCond.col(5) + 1.5 * boundCond.col(2)) * t2 +
+                           (8.0 * boundCond.col(1) + 7.0 * boundCond.col(4)) * t1 +
+                           15.0 * (-boundCond.col(3) + boundCond.col(0));
+        nCoeffMat.col(2) = (0.5 * boundCond.col(5) - 1.5 * boundCond.col(2)) * t2 -
+                           (6.0 * boundCond.col(1) + 4.0 * boundCond.col(4)) * t1 +
+                           10.0 * (boundCond.col(3) - boundCond.col(0));
+        nCoeffMat.col(3) = 0.5 * boundCond.col(2) * t2;
+        nCoeffMat.col(4) = boundCond.col(1) * t1;
+        nCoeffMat.col(5) = boundCond.col(0);
     }
 
     inline int getDim() const
@@ -73,60 +81,59 @@ public:
         return duration;
     }
 
-    inline void setDuration(double dur)
-    {
-        duration = dur;
-        return;
-    }
-
-    inline void setCoeffs(const CoefficientMat &coeffs)
-    {
-        coeffMat = coeffs;
-        return;
-    }
-
     // Get the position at time t in this piece
     inline Eigen::Vector3d getPos(double t) const
     {
+        // Normalize the time
+        t /= duration;
         Eigen::Vector3d pos(0.0, 0.0, 0.0);
         double tn = 1.0;
         for (int i = TrajOrder; i >= 0; i--)
         {
-            pos = (pos + tn * coeffMat.col(i)).eval();
+            pos += tn * nCoeffMat.col(i);
             tn *= t;
         }
+        // The pos is not affected by normalization
         return pos;
     }
 
     // Get the velocity at time t in this piece
     inline Eigen::Vector3d getVel(double t) const
     {
+        // Normalize the time
+        t /= duration;
         Eigen::Vector3d vel(0.0, 0.0, 0.0);
         double tn = 1.0;
         int n = 1;
         for (int i = TrajOrder - 1; i >= 0; i--)
         {
-            vel = (vel + n * tn * coeffMat.col(i)).eval();
+            vel += n * tn * nCoeffMat.col(i);
             tn *= t;
             n++;
         }
+        // Recover the actual vel
+        vel /= duration;
         return vel;
     }
 
     // Get the acceleration at time t in this piece
     inline Eigen::Vector3d getAcc(double t) const
     {
+        // Normalize the time
+        t /= duration;
         Eigen::Vector3d acc(0.0, 0.0, 0.0);
         double tn = 1.0;
-        int n = 1;
-        int m = 2;
+        int m = 1;
+        int n = 2;
         for (int i = TrajOrder - 2; i >= 0; i--)
         {
-            acc = (acc + m * n * tn * coeffMat.col(i)).eval();
+            acc += m * n * tn * nCoeffMat.col(i);
             tn *= t;
-            n++;
             m++;
+            n++;
         }
+        // Recover the actual acc
+        acc /= duration * duration;
         return acc;
     }
 
@@ -139,35 +146,55 @@ public:
         return boundCond;
     }
 
-    inline CoefficientMat getCoeffMat() const
+    // Get the coefficient matrix of the piece
+    // Default arg chooses the natural coefficients
+    // If normalized version is needed, set the arg true
+    inline CoefficientMat getCoeffMat(bool normalized = false) const
     {
-        return coeffMat;
+        CoefficientMat posCoeffsMat;
+        double t = 1;
+        for (int i = TrajOrder; i >= 0; i--)
+        {
+            posCoeffsMat.col(i) = nCoeffMat.col(i) / t;
+            t *= normalized ? 1.0 : duration;
+        }
+        return posCoeffsMat;
     }
 
     // Get the polynomial coefficients of velocity of this piece
-    inline VelCoefficientMat getVelCoeffMat() const
+    // Default arg chooses the natural coefficients
+    // If normalized version is needed, set the arg true
+    inline VelCoefficientMat getVelCoeffMat(bool normalized = false) const
     {
         VelCoefficientMat velCoeffMat;
-        int n = TrajOrder;
-        for (int i = 0; i < TrajOrder; i++)
+        int n = 1;
+        double t = 1.0;
+        t *= normalized ? 1.0 : duration;
+        for (int i = TrajOrder - 1; i >= 0; i--)
         {
-            velCoeffMat.col(i) = n * coeffMat.col(i);
-            n--;
+            velCoeffMat.col(i) = n * nCoeffMat.col(i) / t;
+            n++;
+            t *= normalized ? 1.0 : duration;
         }
         return velCoeffMat;
     }
 
     // Get the polynomial coefficients of acceleration of this piece
-    inline AccCoefficientMat getAccCoeffMat() const
+    // Default arg chooses the natural coefficients
+    // If normalized version is needed, set the arg true
+    inline AccCoefficientMat getAccCoeffMat(bool normalized = false) const
     {
         AccCoefficientMat accCoeffMat;
-        int n = TrajOrder;
-        int m = TrajOrder - 1;
-        for (int i = 0; i < TrajOrder - 1; i++)
+        int n = 2;
+        int m = 1;
+        double t = 1.0;
+        t *= normalized ? 1.0 : duration * duration;
+        for (int i = TrajOrder - 2; i >= 0; i--)
         {
-            accCoeffMat.col(i) = n * m * coeffMat.col(i);
-            n--;
-            m--;
+            accCoeffMat.col(i) = n * m * nCoeffMat.col(i) / t;
+            n++;
+            m++;
+            t *= normalized ? 1.0 : duration;
         }
         return accCoeffMat;
     }
@@ -175,11 +202,11 @@ public:
     // Get the max velocity rate of the piece
     inline double getMaxVelRate() const
     {
-        // Compute squared vel norm polynomial coefficient matrix
-        Eigen::MatrixXd velCoeffMat = getVelCoeffMat();
-        Eigen::VectorXd coeff = RootFinder::polySqr(velCoeffMat.row(0)) +
-                                RootFinder::polySqr(velCoeffMat.row(1)) +
-                                RootFinder::polySqr(velCoeffMat.row(2));
+        // Compute normalized squared vel norm polynomial coefficient matrix
+        Eigen::MatrixXd nVelCoeffMat = getVelCoeffMat(true);
+        Eigen::VectorXd coeff = RootFinder::polySqr(nVelCoeffMat.row(0)) +
+                                RootFinder::polySqr(nVelCoeffMat.row(1)) +
+                                RootFinder::polySqr(nVelCoeffMat.row(2));
         int N = coeff.size();
         int n = N - 1;
         for (int i = 0; i < N; i++)
@@ -194,32 +221,33 @@ public:
         else
         {
             // Search an open interval whose boundaries are not zeros
-            double l = -0.0625 * duration;
-            double r = 1.0625 * duration;
+            double l = -0.0625;
+            double r = 1.0625;
             while (fabs(RootFinder::polyVal(coeff.head(N - 1), l)) < DBL_EPSILON)
             {
                 l = 0.5 * l;
             }
             while (fabs(RootFinder::polyVal(coeff.head(N - 1), r)) < DBL_EPSILON)
             {
-                r = 0.5 * (r + duration);
+                r = 0.5 * (r + 1.0);
             }
             // Find all stationaries
-            std::set<double> candidates = RootFinder::solvePolynomial(coeff.head(N - 1), l,
-                                                                      r, FLT_EPSILON);
+            std::set<double> candidates = RootFinder::solvePolynomial(coeff.head(N - 1), l, r,
+                                                                      FLT_EPSILON / duration);
 
             // Check boundary points and stationaries within duration
             candidates.insert(0.0);
-            candidates.insert(duration);
+            candidates.insert(1.0);
             double maxVelRateSqr = -INFINITY;
             double tempNormSqr;
             for (std::set<double>::const_iterator it = candidates.begin();
                  it != candidates.end();
                  it++)
             {
-                if (0.0 <= *it && duration >= *it)
+                if (0.0 <= *it && 1.0 >= *it)
                 {
-                    tempNormSqr = getVel(*it).squaredNorm();
+                    // Recover the actual time then get the vel squared norm
+                    tempNormSqr = getVel((*it) * duration).squaredNorm();
                     maxVelRateSqr = maxVelRateSqr < tempNormSqr ? tempNormSqr : maxVelRateSqr;
                 }
             }
@@ -230,11 +258,11 @@ public:
     // Get the max acceleration rate of the piece
     inline double getMaxAccRate() const
     {
-        // Compute squared acc norm polynomial coefficient matrix
-        Eigen::MatrixXd accCoeffMat = getAccCoeffMat();
-        Eigen::VectorXd coeff = RootFinder::polySqr(accCoeffMat.row(0)) +
-                                RootFinder::polySqr(accCoeffMat.row(1)) +
-                                RootFinder::polySqr(accCoeffMat.row(2));
+        // Compute normalized squared acc norm polynomial coefficient matrix
+        Eigen::MatrixXd nAccCoeffMat = getAccCoeffMat(true);
+        Eigen::VectorXd coeff = RootFinder::polySqr(nAccCoeffMat.row(0)) +
+                                RootFinder::polySqr(nAccCoeffMat.row(1)) +
+                                RootFinder::polySqr(nAccCoeffMat.row(2));
         int N = coeff.size();
         int n = N - 1;
         for (int i = 0; i < N; i++)
@@ -249,31 +277,32 @@ public:
         else
         {
             // Search an open interval whose boundaries are not zeros
-            double l = -0.0625 * duration;
-            double r = 1.0625 * duration;
+            double l = -0.0625;
+            double r = 1.0625;
             while (fabs(RootFinder::polyVal(coeff.head(N - 1), l)) < DBL_EPSILON)
             {
                 l = 0.5 * l;
             }
             while (fabs(RootFinder::polyVal(coeff.head(N - 1), r)) < DBL_EPSILON)
             {
-                r = 0.5 * (r + duration);
+                r = 0.5 * (r + 1.0);
             }
             // Find all stationaries
-            std::set<double> candidates = RootFinder::solvePolynomial(coeff.head(N - 1), l,
-                                                                      r, FLT_EPSILON);
+            std::set<double> candidates = RootFinder::solvePolynomial(coeff.head(N - 1), l, r,
+                                                                      FLT_EPSILON / duration);
             // Check boundary points and stationaries within duration
             candidates.insert(0.0);
-            candidates.insert(duration);
+            candidates.insert(1.0);
             double maxAccRateSqr = -INFINITY;
             double tempNormSqr;
             for (std::set<double>::const_iterator it = candidates.begin();
                  it != candidates.end();
                  it++)
             {
-                if (0.0 <= *it && duration >= *it)
+                if (0.0 <= *it && 1.0 >= *it)
                 {
-                    tempNormSqr = getAcc(*it).squaredNorm();
+                    // Recover the actual time then get the acc squared norm
+                    tempNormSqr = getAcc((*it) * duration).squaredNorm();
                     maxAccRateSqr = maxAccRateSqr < tempNormSqr ? tempNormSqr : maxAccRateSqr;
                 }
             }
@@ -292,13 +321,15 @@ public:
         }
         else
         {
-            Eigen::MatrixXd velCoeffMat = getVelCoeffMat();
-            Eigen::VectorXd coeff = RootFinder::polySqr(velCoeffMat.row(0)) +
-                                    RootFinder::polySqr(velCoeffMat.row(1)) +
-                                    RootFinder::polySqr(velCoeffMat.row(2));
-            coeff.tail<1>()(0) -= sqrMaxVelRate;
-            // Direct checking by roots existence
-            return RootFinder::countRoots(coeff, 0.0, duration) == 0;
+            Eigen::MatrixXd nVelCoeffMat = getVelCoeffMat(true);
+            Eigen::VectorXd coeff = RootFinder::polySqr(nVelCoeffMat.row(0)) +
+                                    RootFinder::polySqr(nVelCoeffMat.row(1)) +
+                                    RootFinder::polySqr(nVelCoeffMat.row(2));
+            // Convert the actual squared maxVelRate to a normalized one
+            double t2 = duration * duration;
+            coeff.tail<1>()(0) -= sqrMaxVelRate * t2;
+            // Directly check the root existence in the normalized interval
+            return RootFinder::countRoots(coeff, 0.0, 1.0) == 0;
         }
     }
 
@@ -313,25 +344,22 @@ public:
         }
         else
         {
-            Eigen::MatrixXd accCoeffMat = getAccCoeffMat();
-            Eigen::VectorXd coeff = RootFinder::polySqr(accCoeffMat.row(0)) +
-                                    RootFinder::polySqr(accCoeffMat.row(1)) +
-                                    RootFinder::polySqr(accCoeffMat.row(2));
-            coeff.tail<1>()(0) -= sqrMaxAccRate;
-            // Direct checking by roots existence
-            return RootFinder::countRoots(coeff, 0.0, duration) == 0;
+            Eigen::MatrixXd nAccCoeffMat = getAccCoeffMat(true);
+            Eigen::VectorXd coeff = RootFinder::polySqr(nAccCoeffMat.row(0)) +
+                                    RootFinder::polySqr(nAccCoeffMat.row(1)) +
+                                    RootFinder::polySqr(nAccCoeffMat.row(2));
+            // Convert the actual squared maxAccRate to a normalized one
+            double t2 = duration * duration;
+            double t4 = t2 * t2;
+            coeff.tail<1>()(0) -= sqrMaxAccRate * t4;
+            // Directly check the root existence in the normalized interval
+            return RootFinder::countRoots(coeff, 0.0, 1.0) == 0;
         }
     }
 
     //Scale the Piece(t) to Piece(k*t)
     inline void scaleTime(double k)
     {
-        double rPwr = 1.0;
-        for (int i = TrajOrder; i >= 0; i--)
-        {
-            coeffMat.col(i) *= rPwr;
-            rPwr *= k;
-        }
         duration /= k;
         return;
     }
