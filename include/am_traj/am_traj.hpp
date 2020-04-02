@@ -1300,6 +1300,10 @@ private:
 
                 lastTraj = traj;
             }
+            // Although objectives are much the same, we find that the minimum
+            // in "Coeffs Direction" is smoother than the one in "Durations Direction"
+            // in most cases. Therefore we update Coeffs one last time.
+            optimizeCoeffsConstrained(traj, idxPieceStuck);
 
             // When there is piece stuck, call this func on sub-trajectories
             if (idxPieceStuck != -1)
@@ -1412,6 +1416,14 @@ public:
 
             lastDurations = durations;
         }
+        // Although the unconstrained minimum can be reached in both diretions,
+        // we find that the minimum in "Coeffs Direction" is smoother than the
+        // minimum in "Durations Direction" in most cases. Therefore, we choose
+        // the smoother one in the given relative tolerance.
+        coeffMats = optimizeCoeffs(wayPs, durations,
+                                   iniVel, iniAcc,
+                                   finVel, finAcc);
+        traj = Trajectory(durations, coeffMats);
 
         return traj;
     }
