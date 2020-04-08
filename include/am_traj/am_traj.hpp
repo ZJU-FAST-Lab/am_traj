@@ -365,115 +365,6 @@ public:
     }
 };
 
-// The banded system class is used for solving
-// banded linear system Ax=b extremely fast.
-// A is an N*N banded matrix with lower band width
-// lowerBw and upper band width upperBw.
-// Banded LU factorization is O(n) time complexity.
-class BandedSystem
-{
-public:
-    // The size of A, as well as lower/upper
-    // banded width p/q are needed
-    BandedSystem(const int &n, const int &p, const int &q)
-        : N(n), lowerBw(p), upperBw(q),
-          ptrData(nullptr), offset(nullptr)
-    {
-        int rows = lowerBw + upperBw + 1;
-        int actualSize = N * rows;
-        ptrData = new double[actualSize];
-        std::fill_n(ptrData, actualSize, 0.0);
-        offset = new double *[rows];
-        double *ptrRow = ptrData;
-        for (int i = 0; i < rows; i++)
-        {
-            offset[i] = ptrRow;
-            ptrRow += N;
-        }
-    }
-
-    ~BandedSystem()
-    {
-        if (ptrData != nullptr)
-        {
-            delete[] ptrData;
-        }
-        if (offset != nullptr)
-        {
-            delete[] offset;
-        }
-    }
-
-private:
-    int N;
-    int lowerBw;
-    int upperBw;
-    double *ptrData;
-    double **offset;
-
-public:
-    // The band matrix is stored as suggested in Matrix Computation
-    inline const double &operator()(const int &i, const int &j) const
-    {
-        return offset[i - j + upperBw][j];
-    }
-
-    inline double &operator()(const int &i, const int &j)
-    {
-        return offset[i - j + upperBw][j];
-    }
-
-    // This function do banded LU factorization in place
-    // Note A should not have zero diagonal elements for
-    // simplicity. Normally, this can be satisfied in most
-    // cases where no redundant variables are in x.
-    inline void factorizeLU()
-    {
-        int iM, jM;
-        for (int k = 0; k <= N - 2; k++)
-        {
-            iM = std::min(k + lowerBw, N - 1);
-            for (int i = k + 1; i <= iM; i++)
-            {
-                operator()(i, k) /= operator()(k, k);
-            }
-            jM = std::min(k + upperBw, N - 1);
-            for (int j = k + 1; j <= jM; j++)
-            {
-                for (int i = k + 1; i <= iM; i++)
-                {
-                    operator()(i, j) -= operator()(i, k) * operator()(k, j);
-                }
-            }
-        }
-    }
-
-    // This function solve Ax=b, then store x in b
-    // The input b is required to be N*m, i.e.,
-    // m vectors to be solved.
-    inline void solve(Eigen::MatrixXd &b) const
-    {
-        int iM;
-        for (int j = 0; j <= N - 1; j++)
-        {
-            iM = std::min(j + lowerBw, N - 1);
-            for (int i = j + 1; i <= iM; i++)
-            {
-                b.row(i) -= operator()(i, j) * b.row(j);
-            }
-        }
-        for (int j = N - 1; j >= 0; j--)
-        {
-            b.row(j) /= operator()(j, j);
-            iM = std::max(0, j - upperBw);
-            for (int i = iM; i <= j - 1; i++)
-            {
-                b.row(i) -= operator()(i, j) * b.row(j);
-            }
-        }
-    }
-};
-
 // A whole trajectory which contains multiple pieces
 class Trajectory
 {
@@ -710,6 +601,115 @@ public:
     }
 };
 
+// The banded system class is used for solving
+// banded linear system Ax=b efficiently.
+// A is an N*N band matrix with lower band width lowerBw
+// and upper band width upperBw.
+// Banded LU factorization has O(N) time complexity.
+class BandedSystem
+{
+public:
+    // The size of A, as well as the lower/upper
+    // banded width p/q are needed
+    BandedSystem(const int &n, const int &p, const int &q)
+        : N(n), lowerBw(p), upperBw(q),
+          ptrData(nullptr), offset(nullptr)
+    {
+        int rows = lowerBw + upperBw + 1;
+        int actualSize = N * rows;
+        ptrData = new double[actualSize];
+        std::fill_n(ptrData, actualSize, 0.0);
+        offset = new double *[rows];
+        double *ptrRow = ptrData;
+        for (int i = 0; i < rows; i++)
+        {
+            offset[i] = ptrRow;
+            ptrRow += N;
+        }
+    }
+
+    ~BandedSystem()
+    {
+        if (ptrData != nullptr)
+        {
+            delete[] ptrData;
+        }
+        if (offset != nullptr)
+        {
+            delete[] offset;
+        }
+    }
+
+private:
+    int N;
+    int lowerBw;
+    int upperBw;
+    double *ptrData;
+    double **offset;
+
+public:
+    // The band matrix is stored as suggested in "Matrix Computation"
+    inline const double &operator()(const int &i, const int &j) const
+    {
+        return offset[i - j + upperBw][j];
+    }
+
+    inline double &operator()(const int &i, const int &j)
+    {
+        return offset[i - j + upperBw][j];
+    }
+
+    // This function conducts banded LU factorization in place
+    // Note that A should not have zero diagonal elements for
+    // simplicity. Normally, this can be satisfied in most
+    // cases where no redundant variables are in x.
+    inline void factorizeLU()
+    {
+        int iM, jM;
+        for (int k = 0; k <= N - 2; k++)
+        {
+            iM = std::min(k + lowerBw, N - 1);
+            for (int i = k + 1; i <= iM; i++)
+            {
+                operator()(i, k) /= operator()(k, k);
+            }
+            jM = std::min(k + upperBw, N - 1);
+            for (int j = k + 1; j <= jM; j++)
+            {
+                for (int i = k + 1; i <= iM; i++)
+                {
+                    operator()(i, j) -= operator()(i, k) * operator()(k, j);
+                }
+            }
+        }
+    }
+
+    // This function solves Ax=b, then stores x in b
+    // The input b is required to be N*m, i.e.,
+    // m vectors to be solved.
+    inline void solve(Eigen::MatrixXd &b) const
+    {
+        int iM;
+        for (int j = 0; j <= N - 1; j++)
+        {
+            iM = std::min(j + lowerBw, N - 1);
+            for (int i = j + 1; i <= iM; i++)
+            {
+                b.row(i) -= operator()(i, j) * b.row(j);
+            }
+        }
+        for (int j = N - 1; j >= 0; j--)
+        {
+            b.row(j) /= operator()(j, j);
+            iM = std::max(0, j - upperBw);
+            for (int i = iM; i <= j - 1; i++)
+            {
+                b.row(i) -= operator()(i, j) * b.row(j);
+            }
+        }
+    }
+};
+
 // The trajectory optimizer to get optimal coefficient and durations at the same time
 class AmTraj
 {
@@ -825,13 +825,13 @@ private:
         {
             cv00(i) = wAcc * 120.0 / 7.0 / t2(i) +
                       wJerk * 720.0 / t4(i);
-            cv01(i) = wAcc * -120.0 / 7.0 * (1 / t2(i) - 1 / t2(i + 1)) +
+            cv01(i) = wAcc * -120.0 / 7.0 * (1.0 / t2(i) - 1.0 / t2(i + 1)) +
                       wJerk * 720.0 * (1.0 / t4(i + 1) - 1.0 / t4(i));
             cv02(i) = wAcc * -120.0 / 7.0 / t2(i + 1) +
                       wJerk * -720.0 / t4(i + 1);
             cv10(i) = wAcc * 216.0 / 35.0 / t1(i) +
                       wJerk * 336.0 / t3(i);
-            cv11(i) = wAcc * 384.0 / 35.0 * (1 / t1(i) + 1 / t1(i + 1)) +
+            cv11(i) = wAcc * 384.0 / 35.0 * (1.0 / t1(i) + 1.0 / t1(i + 1)) +
                       wJerk * 384.0 * (1.0 / t3(i + 1) + 1.0 / t3(i));
             cv12(i) = wAcc * 216.0 / 35.0 / t1(i + 1) +
                       wJerk * 336.0 / t3(i + 1);
@@ -844,7 +844,7 @@ private:
 
             ca00(i) = wAcc * -6.0 / 7.0 / t1(i) +
                       wJerk * -120.0 / t3(i);
-            ca01(i) = wAcc * 6.0 / 7.0 * (1 / t1(i) + 1 / t1(i + 1)) +
+            ca01(i) = wAcc * 6.0 / 7.0 * (1.0 / t1(i) + 1.0 / t1(i + 1)) +
                       wJerk * 120.0 * (1.0 / t3(i + 1) + 1.0 / t3(i));
             ca02(i) = wAcc * -6.0 / 7.0 / t1(i + 1) +
                       wJerk * -120.0 / t3(i + 1);
