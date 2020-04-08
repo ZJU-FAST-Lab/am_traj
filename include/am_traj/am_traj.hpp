@@ -925,6 +925,7 @@ private:
 
             // Solve Ax=b using banded LU factorization
             A.factorizeLU();
+            // The solution is computed in place.
             A.solve(b);
 
             VelsAccs << iniVel, iniAcc, b.transpose(), finVel, finAcc;
