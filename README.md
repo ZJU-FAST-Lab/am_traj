@@ -34,7 +34,7 @@ __Video Links__: [youtube](https://youtu.be/ayoQ7i1Lz5s) or [bilibili](https://w
 
 - The library provides an efficient formulation for various feasibility checkers. Only algebraic operations are involved, which make our feasbility check for some high-order (>4) constraints even __faster than traditional check by closed-form solutions__ for low-order constraints (<=4). Therefore, the scalability makes it no longer painful to do feasibility check for high-order polynomial trajectories.
 
-- The library implements an extremely fast spatial trajectory solver when time allocation is prefixed and constraints are not considered. It uses a Banded LU Factorization which is much more efficient here than a general Sparse LU Factorization. The former has linear time complexity while the latter may get stuck in its "analyzePattern". Therefore, our lib __only requires 4 (or 18) seconds__ to generate an __Unconstrained Spatial (or Spatial-Temporal) Optimal Trajectory with 1000000 Pieces__!!!
+- The library implements an extremely fast spatial trajectory solver when time allocation is prefixed and constraints are not considered. It uses a Banded LU Factorization which is much more efficient here than a general Sparse LU Factorization. The former has linear time complexity while the latter may get stuck in its "analyzePattern". Therefore, our lib __only requires 4 (or 18) seconds__ to generate an __Unconstrained Spatial (or Spatial-Temporal) Optimal Traj with 1000000 Segments!!!
 
 ## 2. Interface
 
