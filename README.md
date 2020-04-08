@@ -34,7 +34,7 @@ __Video Links__: [youtube](https://youtu.be/ayoQ7i1Lz5s) or [bilibili](https://w
 
 - The library provides an efficient formulation for various feasibility checkers. Only algebraic operations are involved, which make our feasbility check for some high-order (>4) constraints even __faster than traditional check by closed-form solutions__ for low-order constraints (<=4). Therefore, the scalability makes it no longer painful to do feasibility check for high-order polynomial trajectories.
 
-- The library implements an extremely fast spatial trajectory Solver in which time allocation is prefixed and constraints are not considered. It uses Banded LU Factorization which is much more efficient here than a general Sparse LU Factorization. The former has linear time complexity while the latter may get stuck in its "analyzePattern". Therefore, our lib __only requires 4 (or 18) seconds__ to generate an __Unconstrained Spatial (or Spatial-Temporal) Optimal Trajectory with 1000000 Segments__!!!
+- The library implements an extremely fast spatial trajectory solver when time allocation is prefixed and constraints are not considered. It uses a Banded LU Factorization which is much more efficient here than a general Sparse LU Factorization. The former has linear time complexity while the latter may get stuck in its "analyzePattern". Therefore, our lib __only requires 4 (or 18) seconds__ to generate an __Unconstrained Spatial (or Spatial-Temporal) Optimal Trajectory with 1000000 Segments__!!!
 
 ## 2. Interface
 
@@ -46,7 +46,7 @@ Only three functions below are needed.
 
   Inputs:
 
-    wT: Weight for the time regularizarion
+    wT: Weight for the time regularization
     wA: Weight for the integrated squared norm of acceleration
     wJ: Weight for the integrated squared norm of jerk
     mVr: Maximum velocity rate
@@ -253,7 +253,7 @@ Two examples are provided in this repository.
 
 - The library implements a specific order of polynomial trajectory optimization. If higher or lower order is required, it is recommended to refer to our related papers, where the framework used in the library are described and analyzed more flexibly.
 
-- The self-developed toolkit "root_finder.hpp" used in this library is an portable substitution to the suggested modern univariate polynomial real-roots solver in our related paper. It is more efficient in our scene than the wide used [__TOMS493: Jenkins–Traub Algorithm__](https://en.wikipedia.org/wiki/Jenkins%E2%80%93Traub_algorithm). For detailed performance, please refered to the corresponding [repository](https://github.com/ZJU-FAST-Lab/Root-Finder). If efficiency is much more important to you, we suggest an closed-source solver [RS-ANewDsc](http://anewdsc.mpi-inf.mpg.de/) from Max Planck Institute for Informatics.
+- The self-developed toolkit "root_finder.hpp" used in this library is an portable substitution to the suggested modern univariate polynomial real-roots solver in our related paper. It is more efficient in our scene than the wide used [__TOMS493: Jenkins–Traub Algorithm__](https://en.wikipedia.org/wiki/Jenkins%E2%80%93Traub_algorithm). For detailed performance, please refer to the corresponding [repository](https://github.com/ZJU-FAST-Lab/Root-Finder). If efficiency is much more important to you, we suggest an closed-source solver [RS-ANewDsc](http://anewdsc.mpi-inf.mpg.de/) from Max Planck Institute for Informatics.
 
 - Currently, we only implement feasibilty checker for dynamic constraints. If only your constraints can be expressed in multivariate polynomial of trajectory or its higher derivatives. You can transform it into compatible format and utilize some functions in this library to accomplish simple yet solid check for it.
 
