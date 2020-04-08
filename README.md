@@ -4,7 +4,7 @@ Alternating Minimization Based Trajectory Generation for Quadrotor Aggressive Fl
 
 ## 0. About
 
-__AM-Traj__ is a __C++11__ [__header-only__](https://en.wikipedia.org/wiki/Header-only) library for generating large-scale piecewise polynomial trajectories for aggressive autonomous flights, with highlights on its superior computational efficiency and simultaneous spatial-temporal optimality. Besides, an extremely fast feasibility checker is designed for various kinds of constraints. All components in this framework leverage the algebraic convenience of polynomial trajectory optimization problem, thus our method is capable of computing a spatial-temporal optimal trajectory with 60 pieces within 5ms, i.e., 150Hz at least. You just need to include "am_traj.hpp" and "root_finder.hpp" in your code. __Please use the up-to-date master branch instead of a released one.__
+__AM-Traj__ is a __C++11__ [__header-only__](https://en.wikipedia.org/wiki/Header-only) library for generating large-scale piecewise polynomial trajectories for aggressive autonomous flights, with highlights on its superior computational efficiency and simultaneous spatial-temporal optimality. Besides, an extremely fast feasibility checker is designed for various kinds of constraints. All components in this framework leverage the algebraic convenience of polynomial trajectory optimization problem, thus our method is capable of computing a spatial-temporal optimal trajectory with 60 pieces within 5ms, i.e., 150Hz at least. You just need to include "am_traj.hpp" and "root_finder.hpp" in your code. __Please use the up-to-date master branch which may have a better performance than the one in our papers.__
 
 __Author__: Zhepei Wang and [Fei Gao](https://ustfei.com/) from the [ZJU Fast Lab](http://www.kivact.com/).
 
@@ -33,6 +33,8 @@ __Video Links__: [youtube](https://youtu.be/ayoQ7i1Lz5s) or [bilibili](https://w
 - The library is able to generate __large-scale__ trajectories with __optimal coefficients__ and __optimal time allocations__ in __real-time__, without using general purpose [NLP](https://en.wikipedia.org/wiki/Nonlinear_programming) solvers. Both the unconstrained case as well as the constrained case are considered.
 
 - The library provides an efficient formulation for various feasibility checkers. Only algebraic operations are involved, which make our feasbility check for some high-order (>4) constraints even __faster than traditional check by closed-form solutions__ for low-order constraints (<=4). Therefore, the scalability makes it no longer painful to do feasibility check for high-order polynomial trajectories.
+
+- The library implements an extremely fast Minimum Jerk solver when optimal time allocation and constraints are not considered. It uses Banded LU Factorization which is much more efficient than Sparse LU Factorization in our case. The former is linear time complexity while the latter may stuck in its "analyzePattern". For __1000000 segment Minimum Jerk trajectory__, the computation __only requires 4 seconds__ !!!
 
 ## 2. Interface
 

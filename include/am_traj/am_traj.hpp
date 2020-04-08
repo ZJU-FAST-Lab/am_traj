@@ -365,6 +365,115 @@ public:
     }
 };
 
+// The banded system class is used for solving
+// banded linear system Ax=b extremely fast.
+// A is an N*N banded matrix with lower band width
+// lowerBw and upper band width upperBw.
+// Banded LU factorization is O(n) time complexity.
+class BandedSystem
+{
+public:
+    // The size of A, as well as lower/upper
+    // banded width p/q are needed
+    BandedSystem(const int &n, const int &p, const int &q)
+        : N(n), lowerBw(p), upperBw(q),
+          ptrData(nullptr), offset(nullptr)
+    {
+        int rows = lowerBw + upperBw + 1;
+        int actualSize = N * rows;
+        ptrData = new double[actualSize];
+        std::fill_n(ptrData, actualSize, 0.0);
+        offset = new double *[rows];
+        double *ptrRow = ptrData;
+        for (int i = 0; i < rows; i++)
+        {
+            offset[i] = ptrRow;
+            ptrRow += N;
+        }
+    }
+
+    ~BandedSystem()
+    {
+        if (ptrData != nullptr)
+        {
+            delete[] ptrData;
+        }
+        if (offset != nullptr)
+        {
+            delete[] offset;
+        }
+    }
+
+private:
+    int N;
+    int lowerBw;
+    int upperBw;
+    double *ptrData;
+    double **offset;
+
+public:
+    // The band matrix is stored as suggested in Matrix Computation
+    inline const double &operator()(const int &i, const int &j) const
+    {
+        return offset[i - j + upperBw][j];
+    }
+
+    inline double &operator()(const int &i, const int &j)
+    {
+        return offset[i - j + upperBw][j];
+    }
+
+    // This function do banded LU factorization in place
+    // Note A should not have zero diagonal elements for
+    // simplicity. Normally, this can be satisfied in most
+    // cases where no redundant variables are in x.
+    inline void factorizeLU()
+    {
+        int iM, jM;
+        for (int k = 0; k <= N - 2; k++)
+        {
+            iM = std::min(k + lowerBw, N - 1);
+            for (int i = k + 1; i <= iM; i++)
+            {
+                operator()(i, k) /= operator()(k, k);
+            }
+            jM = std::min(k + upperBw, N - 1);
+            for (int j = k + 1; j <= jM; j++)
+            {
+                for (int i = k + 1; i <= iM; i++)
+                {
+                    operator()(i, j) -= operator()(i, k) * operator()(k, j);
+                }
+            }
+        }
+    }
+
+    // This function solve Ax=b, then store x in b
+    // The input b is required to be N*m, i.e.,
+    // m vectors to be solved.
+    inline void solve(Eigen::MatrixXd &b) const
+    {
+        int iM;
+        for (int j = 0; j <= N - 1; j++)
+        {
+            iM = std::min(j + lowerBw, N - 1);
+            for (int i = j + 1; i <= iM; i++)
+            {
+                b.row(i) -= operator()(i, j) * b.row(j);
+            }
+        }
+        for (int j = N - 1; j >= 0; j--)
+        {
+            b.row(j) /= operator()(j, j);
+            iM = std::max(0, j - upperBw);
+            for (int i = iM; i <= j - 1; i++)
+            {
+                b.row(i) -= operator()(i, j) * b.row(j);
+            }
+        }
+    }
+};
+
 // A whole trajectory which contains multiple pieces
 class Trajectory
 {
@@ -761,7 +870,6 @@ private:
         }
         else if (N == 2)
         {
-            Eigen::MatrixXd sol(2, 3);
             Eigen::MatrixXd A(2, 2), b(2, 3);
             A.setZero();
             b.setZero();
@@ -770,93 +878,56 @@ private:
             A << cv11(0), cv21(0), ca11(0), ca21(0);
             b << (-cv00(0) * wayPs[0] - cv01(0) * wayPs[1] - cv02(0) * wayPs[2] - cv10(0) * iniVel - cv20(0) * iniAcc - cv12(0) * finVel - cv22(0) * finAcc).transpose(), (-ca00(0) * wayPs[0] - ca01(0) * wayPs[1] - ca02(0) * wayPs[2] - ca10(0) * iniVel - ca20(0) * iniAcc - ca12(0) * finVel - ca22(0) * finAcc).transpose();
 
-            sol = A.inverse() * b;
-            VelsAccs << iniVel, iniAcc, sol.transpose(), finVel, finAcc;
-        }
-        else if (N <= 32)
-        {
-            // When number of pieces is less than 32, direct inversing A is faster
-            Eigen::MatrixXd sol(2 * N - 2, 3);
-            Eigen::MatrixXd A(2 * N - 2, 2 * N - 2), b(2 * N - 2, 3);
-            A.setZero();
-            b.setZero();
-
-            // Fill all nonzero entries in A and b
-            A.topLeftCorner<2, 4>() << cv11(0), cv21(0), cv12(0), cv22(0), ca11(0), ca21(0), ca12(0), ca22(0);
-            A.bottomRightCorner<2, 4>() << cv10(N - 2), cv20(N - 2), cv11(N - 2), cv21(N - 2), ca10(N - 2), ca20(N - 2), ca11(N - 2), ca21(N - 2);
-            b.topLeftCorner<2, 3>() << (-cv00(0) * wayPs[0] - cv01(0) * wayPs[1] - cv02(0) * wayPs[2] - cv10(0) * iniVel - cv20(0) * iniAcc).transpose(), (-ca00(0) * wayPs[0] - ca01(0) * wayPs[1] - ca02(0) * wayPs[2] - ca10(0) * iniVel - ca20(0) * iniAcc).transpose();
-            b.bottomRightCorner<2, 3>() << (-cv00(N - 2) * wayPs[N - 2] - cv01(N - 2) * wayPs[N - 1] - cv02(N - 2) * wayPs[N] - cv12(N - 2) * finVel - cv22(N - 2) * finAcc).transpose(), (-ca00(N - 2) * wayPs[N - 2] - ca01(N - 2) * wayPs[N - 1] - ca02(N - 2) * wayPs[N] - ca12(N - 2) * finVel - ca22(N - 2) * finAcc).transpose();
-
-            for (int i = 1; i < N - 2; i++)
-            {
-                A.block<2, 6>(i * 2, i * 2 - 2) << cv10(i), cv20(i), cv11(i), cv21(i), cv12(i), cv22(i), ca10(i), ca20(i), ca11(i), ca21(i), ca12(i), ca22(i);
-                b.block<2, 3>(i * 2, 0) << (-cv00(i) * wayPs[i] - cv01(i) * wayPs[i + 1] - cv02(i) * wayPs[i + 2]).transpose(), (-ca00(i) * wayPs[i] - ca01(i) * wayPs[i + 1] - ca02(i) * wayPs[i + 2]).transpose();
-            }
-
-            sol = A.inverse() * b;
-            VelsAccs << iniVel, iniAcc, sol.transpose(), finVel, finAcc;
+            VelsAccs << iniVel, iniAcc, (A.inverse() * b).transpose(), finVel, finAcc;
         }
         else
         {
-            // When number of piece is too large, sparse LU factorization are more efficient.
-            // TODO: Implement Banded LU Factorization for Ax=b which makes the whole optimizer O(m) complexity !!!
-            // Here we use sparse LU in Eigen for now, which have the overhead caused by "analyzePattern"
-            Eigen::MatrixXd sol(2 * N - 2, 3);
-
-            Eigen::SparseMatrix<double> A(2 * N - 2, 2 * N - 2);
-            A.reserve(6 * 2 * (N - 1));
+            BandedSystem A(2 * N - 2, 3, 3);
             Eigen::MatrixXd b(2 * N - 2, 3);
             b.setZero();
 
-            // Construct the banded matrix A
-            A.insert(0, 0) = cv11(0);
-            A.insert(0, 1) = cv21(0);
-            A.insert(0, 2) = cv12(0);
-            A.insert(0, 3) = cv22(0);
-            A.insert(1, 0) = ca11(0);
-            A.insert(1, 1) = ca21(0);
-            A.insert(1, 2) = ca12(0);
-            A.insert(1, 3) = ca22(0);
-            A.insert(2 * N - 4, 2 * N - 6) = cv10(N - 2);
-            A.insert(2 * N - 4, 2 * N - 5) = cv20(N - 2);
-            A.insert(2 * N - 4, 2 * N - 4) = cv11(N - 2);
-            A.insert(2 * N - 4, 2 * N - 3) = cv21(N - 2);
-            A.insert(2 * N - 3, 2 * N - 6) = ca10(N - 2);
-            A.insert(2 * N - 3, 2 * N - 5) = ca20(N - 2);
-            A.insert(2 * N - 3, 2 * N - 4) = ca11(N - 2);
-            A.insert(2 * N - 3, 2 * N - 3) = ca21(N - 2);
+            A(0, 0) = cv11(0);
+            A(0, 1) = cv21(0);
+            A(0, 2) = cv12(0);
+            A(0, 3) = cv22(0);
+            A(1, 0) = ca11(0);
+            A(1, 1) = ca21(0);
+            A(1, 2) = ca12(0);
+            A(1, 3) = ca22(0);
+            A(2 * N - 4, 2 * N - 6) = cv10(N - 2);
+            A(2 * N - 4, 2 * N - 5) = cv20(N - 2);
+            A(2 * N - 4, 2 * N - 4) = cv11(N - 2);
+            A(2 * N - 4, 2 * N - 3) = cv21(N - 2);
+            A(2 * N - 3, 2 * N - 6) = ca10(N - 2);
+            A(2 * N - 3, 2 * N - 5) = ca20(N - 2);
+            A(2 * N - 3, 2 * N - 4) = ca11(N - 2);
+            A(2 * N - 3, 2 * N - 3) = ca21(N - 2);
 
-            // Construct b
             b.topLeftCorner<2, 3>() << (-cv00(0) * wayPs[0] - cv01(0) * wayPs[1] - cv02(0) * wayPs[2] - cv10(0) * iniVel - cv20(0) * iniAcc).transpose(), (-ca00(0) * wayPs[0] - ca01(0) * wayPs[1] - ca02(0) * wayPs[2] - ca10(0) * iniVel - ca20(0) * iniAcc).transpose();
             b.bottomRightCorner<2, 3>() << (-cv00(N - 2) * wayPs[N - 2] - cv01(N - 2) * wayPs[N - 1] - cv02(N - 2) * wayPs[N] - cv12(N - 2) * finVel - cv22(N - 2) * finAcc).transpose(), (-ca00(N - 2) * wayPs[N - 2] - ca01(N - 2) * wayPs[N - 1] - ca02(N - 2) * wayPs[N] - ca12(N - 2) * finVel - ca22(N - 2) * finAcc).transpose();
             for (int i = 1; i < N - 2; i++)
             {
-                A.insert(i * 2, i * 2 - 2) = cv10(i);
-                A.insert(i * 2, i * 2 - 1) = cv20(i);
-                A.insert(i * 2, i * 2) = cv11(i);
-                A.insert(i * 2, i * 2 + 1) = cv21(i);
-                A.insert(i * 2, i * 2 + 2) = cv12(i);
-                A.insert(i * 2, i * 2 + 3) = cv22(i);
-                A.insert(i * 2 + 1, i * 2 - 2) = ca10(i);
-                A.insert(i * 2 + 1, i * 2 - 1) = ca20(i);
-                A.insert(i * 2 + 1, i * 2) = ca11(i);
-                A.insert(i * 2 + 1, i * 2 + 1) = ca21(i);
-                A.insert(i * 2 + 1, i * 2 + 2) = ca12(i);
-                A.insert(i * 2 + 1, i * 2 + 3) = ca22(i);
+                A(i * 2, i * 2 - 2) = cv10(i);
+                A(i * 2, i * 2 - 1) = cv20(i);
+                A(i * 2, i * 2) = cv11(i);
+                A(i * 2, i * 2 + 1) = cv21(i);
+                A(i * 2, i * 2 + 2) = cv12(i);
+                A(i * 2, i * 2 + 3) = cv22(i);
+                A(i * 2 + 1, i * 2 - 2) = ca10(i);
+                A(i * 2 + 1, i * 2 - 1) = ca20(i);
+                A(i * 2 + 1, i * 2) = ca11(i);
+                A(i * 2 + 1, i * 2 + 1) = ca21(i);
+                A(i * 2 + 1, i * 2 + 2) = ca12(i);
+                A(i * 2 + 1, i * 2 + 3) = ca22(i);
 
                 b.block<2, 3>(i * 2, 0) << (-cv00(i) * wayPs[i] - cv01(i) * wayPs[i + 1] - cv02(i) * wayPs[i + 2]).transpose(), (-ca00(i) * wayPs[i] - ca01(i) * wayPs[i + 1] - ca02(i) * wayPs[i + 2]).transpose();
             }
 
-            // Solve Ax=b sparsely
-            A.makeCompressed();
-            Eigen::SparseLU<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> solver;
-            solver.analyzePattern(A);
-            solver.factorize(A);
-            sol.col(0) = solver.solve(b.col(0));
-            sol.col(1) = solver.solve(b.col(1));
-            sol.col(2) = solver.solve(b.col(2));
+            // Solve Ax=b using banded LU factorization
+            A.factorizeLU();
+            A.solve(b);
 
-            VelsAccs << iniVel, iniAcc, sol.transpose(), finVel, finAcc;
+            VelsAccs << iniVel, iniAcc, b.transpose(), finVel, finAcc;
         }
 
         // Recover coefficient matrices for all pieces from their boundary conditions
