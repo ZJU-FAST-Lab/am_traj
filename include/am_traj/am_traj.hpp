@@ -660,9 +660,9 @@ public:
     }
 
     // This function conducts banded LU factorization in place
-    // Note that A should not have zero diagonal elements for
-    // simplicity. Normally, this can be satisfied in most
-    // cases where no redundant variables are in x.
+    // Note that the matrix "A" MUST NOT HAVE ZERO DIAGONAL ENREIES !!!
+    // Normally, this can be satisfied in most cases where no
+    // redundant variables are in x.
     inline void factorizeLU()
     {
         int iM, jM;
