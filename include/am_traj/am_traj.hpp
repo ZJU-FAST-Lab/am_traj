@@ -1469,13 +1469,14 @@ public:
             optimizeDurations(traj, false);
             durations = traj.getDurations();
 
-            // check if tol fulfilled
+            // Check if tol fulfilled
             inTol = true;
             double diffDuration;
             for (int j = 0; j < traj.getPieceNum(); j++)
             {
                 diffDuration = fabs(durations[j] - lastDurations[j]);
-                if (diffDuration > lastDurations[i] * epsilon)
+                // Rel tol for each piece is used here
+                if (lastDurations[j] * epsilon < diffDuration)
                 {
                     inTol = false;
                     break;
