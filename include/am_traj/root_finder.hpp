@@ -73,25 +73,28 @@ inline double polyEval(double *p, int len, double x)
 {
     double retVal = 0.0;
 
-    if (fabs(x) < DBL_EPSILON)
+    if (len > 0)
     {
-        retVal = p[len - 1];
-    }
-    else if (x == 1.0)
-    {
-        for (int i = len - 1; i >= 0; i--)
+        if (fabs(x) < DBL_EPSILON)
         {
-            retVal += p[i];
+            retVal = p[len - 1];
         }
-    }
-    else
-    {
-        double xn = 1.0;
-
-        for (int i = len - 1; i >= 0; i--)
+        else if (x == 1.0)
         {
-            retVal += p[i] * xn;
-            xn *= x;
+            for (int i = len - 1; i >= 0; i--)
+            {
+                retVal += p[i];
+            }
+        }
+        else
+        {
+            double xn = 1.0;
+
+            for (int i = len - 1; i >= 0; i--)
+            {
+                retVal += p[i] * xn;
+                xn *= x;
+            }
         }
     }
 
@@ -772,33 +775,36 @@ inline double polyVal(const Eigen::VectorXd &coeffs, double x,
     double retVal = 0.0;
     int order = (int)coeffs.size() - 1;
 
-    if (fabs(x) < DBL_EPSILON)
+    if (order >= 0)
     {
-        retVal = coeffs(order);
-    }
-    else if (x == 1.0)
-    {
-        retVal = coeffs.sum();
-    }
-    else
-    {
-        if (numericalStability)
+        if (fabs(x) < DBL_EPSILON)
         {
-            double xn = 1.0;
-
-            for (int i = order; i >= 0; i--)
-            {
-                retVal += coeffs(i) * xn;
-                xn *= x;
-            }
+            retVal = coeffs(order);
+        }
+        else if (x == 1.0)
+        {
+            retVal = coeffs.sum();
         }
         else
         {
-            int len = coeffs.size();
-
-            for (int i = 0; i < len; i++)
+            if (numericalStability)
             {
-                retVal = retVal * x + coeffs(i);
+                double xn = 1.0;
+
+                for (int i = order; i >= 0; i--)
+                {
+                    retVal += coeffs(i) * xn;
+                    xn *= x;
+                }
+            }
+            else
+            {
+                int len = coeffs.size();
+
+                for (int i = 0; i < len; i++)
+                {
+                    retVal = retVal * x + coeffs(i);
+                }
             }
         }
     }
