@@ -2,12 +2,10 @@
 #define ROOT_FINDER_HPP
 
 #define _USE_MATH_DEFINES
+#include <cfloat>
 #include <cmath>
-
 #include <set>
-
 #include <Eigen/Eigen>
-#include <boost/math/tools/toms748_solve.hpp>
 
 namespace RootFinderParam
 {
@@ -417,15 +415,109 @@ inline double numSignVar(double x, double **sturmSeqs, int *szSeq, int len)
     return signVar;
 };
 
+inline void polyDeri(double *coeffs, double *dcoeffs, int len)
+// Calculate the derivative poly coefficients of a given poly
+{
+    int horder = len - 1;
+    for (int i = 0; i < horder; i++)
+    {
+        dcoeffs[i] = (horder - i) * coeffs[i];
+    }
+    return;
+}
+
+template <typename F, typename DF>
+inline double safeNewton(const F &func, const DF &dfunc,
+                         const double &l, const double &h,
+                         const double &tol, const int &maxIts)
+// Safe Newton Method
+// Requirements: f(l)*f(h)<=0
+{
+    double xh, xl;
+    double fl = func(l);
+    double fh = func(h);
+    if (fl == 0.0)
+    {
+        return l;
+    }
+    if (fh == 0.0)
+    {
+        return h;
+    }
+    if (fl < 0.0)
+    {
+        xl = l;
+        xh = h;
+    }
+    else
+    {
+        xh = l;
+        xl = h;
+    }
+
+    double rts = 0.5 * (xl + xh);
+    double dxold = fabs(xh - xl);
+    double dx = dxold;
+    double f = func(rts);
+    double df = dfunc(rts);
+    double temp;
+    for (int j = 0; j < maxIts; j++)
+    {
+        if ((((rts - xh) * df - f) * ((rts - xl) * df - f) > 0.0) ||
+            (fabs(2.0 * f) > fabs(dxold * df)))
+        {
+            dxold = dx;
+            dx = 0.5 * (xh - xl);
+            rts = xl + dx;
+            if (xl == rts)
+            {
+                break;
+            }
+        }
+        else
+        {
+            dxold = dx;
+            dx = f / df;
+            temp = rts;
+            rts -= dx;
+            if (temp == rts)
+            {
+                break;
+            }
+        }
+
+        if (fabs(dx) < tol)
+        {
+            break;
+        }
+
+        f = func(rts);
+        df = dfunc(rts);
+        if (f < 0.0)
+        {
+            xl = rts;
+        }
+        else
+        {
+            xh = rts;
+        }
+    }
+
+    return rts;
+}
+
 inline double shrinkInterval(double *coeffs, int numCoeffs, double lbound, double ubound, double tol)
-// Calculate a single zero of poly coeffs(x) inside [lbound, ubound], using TOMS748 to ensure efficiency
+// Calculate a single zero of poly coeffs(x) inside [lbound, ubound]
 // Requirements: coeffs(lbound)*coeffs(ubound) < 0, lbound < ubound
 {
-    auto tolf = [&tol](double a, double b) { return fabs(a - b) < tol; };
+    double *dcoeffs = new double[numCoeffs - 1];
+    polyDeri(coeffs, dcoeffs, numCoeffs);
     auto func = [&coeffs, &numCoeffs](double x) { return polyEval(coeffs, numCoeffs, x); };
-    boost::uintmax_t maxit = 2 * std::max(1, 1 + (int)log2(fabs((ubound - lbound) / tol)));
-    std::pair<double, double> result = boost::math::tools::toms748_solve(func, lbound, ubound, tolf, maxit);
-    return (result.first + result.second) / 2.0;
+    auto dfunc = [&dcoeffs, &numCoeffs](double x) { return polyEval(dcoeffs, numCoeffs - 1, x); };
+    constexpr int maxDblIts = 128;
+    double rts = safeNewton(func, dfunc, lbound, ubound, tol, maxDblIts);
+    delete[] dcoeffs;
+    return rts;
 }
 
 inline void recurIsolate(double l, double r, double fl, double fr, int lnv, int rnv,
@@ -454,9 +546,9 @@ inline void recurIsolate(double l, double r, double fl, double fr, int lnv, int 
         else
         {
             // Bisect when non of above works
-            int maxits = 2 * std::max(1, 1 + (int)log2(fabs(r - l) / tol));
+            int maxDblIts = 128;
 
-            for (int i = 0; i < maxits; i++)
+            for (int i = 0; i < maxDblIts; i++)
             {
                 // Calculate the root with even multiplicity
                 if (fl * fr < 0)
@@ -495,12 +587,12 @@ inline void recurIsolate(double l, double r, double fl, double fr, int lnv, int 
     else if (nrts > 1)
     {
         // More than one root exists in the interval
-        int maxits = 2 * std::max(1, 1 + (int)log2(fabs(r - l) / tol));
+        int maxDblIts = 128;
 
         int mnv;
         int bias = 0;
         bool biased = false;
-        for (int i = 0; i < maxits; i++)
+        for (int i = 0; i < maxDblIts; i++)
         {
             bias = biased ? bias : 0;
             if (!biased)
