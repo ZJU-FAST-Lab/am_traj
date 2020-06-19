@@ -28,7 +28,7 @@ __Video Links__: [youtube](https://youtu.be/ayoQ7i1Lz5s) or [bilibili](https://w
 
 - Only two headers are required for usage. The first one is "am_traj.hpp", which contains a polynomial trajectory optimizer. The second one is "root_finder.hpp", which originates from a self-developed [toolkit](https://github.com/ZJU-FAST-Lab/Root-Finder).
 
-- No complex third-party dependencies except [STL](https://en.wikipedia.org/wiki/Standard_Template_Library), [Boost](https://en.wikipedia.org/wiki/Boost_(C%2B%2B_libraries)), and [Eigen](https://en.wikipedia.org/wiki/Eigen_(C%2B%2B_library)).
+- No complex third-party dependencies except [STL](https://en.wikipedia.org/wiki/Standard_Template_Library) and [Eigen](https://en.wikipedia.org/wiki/Eigen_(C%2B%2B_library)).
 
 - The library is able to generate __large-scale__ trajectories with __optimal coefficients__ and __optimal time allocations__ in __real-time__, without using general purpose [NLP](https://en.wikipedia.org/wiki/Nonlinear_programming) solvers. Both the unconstrained case as well as the constrained case are considered.
 
@@ -154,9 +154,9 @@ Two examples are provided in this repository.
 
 - Building
 
-  To build this example, first make sure you have [ROS](http://wiki.ros.org/melodic/Installation/Ubuntu) properly installed. Desktop-full install is recommended. Second, clone this repository into the __src__ directory of your ROS workspace. Rename it am_traj then __move the example1 subdirectory to somewhere else__, because we only consider the building of example0 here. Use the following command to install Boost and Eigen if they are not ready.
+  To build this example, first make sure you have [ROS](http://wiki.ros.org/melodic/Installation/Ubuntu) properly installed. Desktop-full install is recommended. Second, clone this repository into the __src__ directory of your ROS workspace. Rename it am_traj then __move the example1 subdirectory to somewhere else__, because we only consider the building of example0 here. Use the following command to install Eigen if they are not ready.
   
-      sudo apt install libboost-dev libeigen3-dev
+      sudo apt install libeigen3-dev
   
   Now cd into your current ROS workspace
 
@@ -184,7 +184,7 @@ Two examples are provided in this repository.
 
 - Building
 
-  To build this example, first make sure you have ROS, Boost, and Eigen properly installed as described in previous example. Moreover, some parts of the simulation require GCC 7. Therefore, if your GCC version is below the required version, the following commands help you install it without changing your default compiler.
+  To build this example, first make sure you have ROS and Eigen properly installed as described in previous example. Moreover, some parts of the simulation require GCC 7. Therefore, if your GCC version is below the required version, the following commands help you install it without changing your default compiler.
   
       sudo apt-get install -y gcc-7 g++-7 && sleep 0.2;
       sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60 --slave /usr/bin/g++ g++ /usr/bin/g++-5 && sleep 0.2;
