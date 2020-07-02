@@ -15,7 +15,7 @@ __Related Papers__:
 
 If you use our code for your academic research, please cite our first related papers.
 
-__Video Links__: [youtube](https://youtu.be/ayoQ7i1Lz5s) or [bilibili](https://www.bilibili.com/video/av91537651)
+__Video Links__: [youtube](https://youtu.be/H89ALyWA2NI) or [bilibili](https://www.bilibili.com/video/av91537651)
 
 <p align="center">
   <img src="misc/cp.gif" width = "533" height = "300"/>
