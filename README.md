@@ -13,7 +13,7 @@ __Related Papers__:
 - [__Alternating Minimization Based Trajectory Generation for Quadrotor Aggressive Flight__](https://ieeexplore.ieee.org/document/9121729), Zhepei Wang, Xin Zhou, Chao Xu, Jian Chu, and Fei Gao, IEEE Robotics and Automation Letters (RA-L).
 - [__Detailed Proofs of Alternating Minimization Based Trajectory Generation for Quadrotor Aggressive Flight__](https://arxiv.org/abs/2002.09254), Zhepei Wang, Xin Zhou, Chao Xu, and Fei Gao, the supplementary material.
 
-If you use our code for your academic research, please cite our first related papers.
+  If you use our code for your academic research, please cite the first related paper.
 
 __Video Links__: [youtube](https://youtu.be/H89ALyWA2NI) or [bilibili](https://www.bilibili.com/video/av91537651)
 
