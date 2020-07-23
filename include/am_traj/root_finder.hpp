@@ -927,7 +927,7 @@ inline int countRoots(const Eigen::VectorXd &coeffs, double l, double r)
     if (valid > 0 && fabs(coeffs(originalSize - 1)) > DBL_EPSILON)
     {
         Eigen::VectorXd monicCoeffs(valid);
-        monicCoeffs << 1.0, coeffs.segment(originalSize - valid + 1, valid - 1) / coeffs(0);
+        monicCoeffs << 1.0, coeffs.segment(originalSize - valid + 1, valid - 1) / coeffs(originalSize - valid);
 
         // Build the Sturm sequence
         int len = monicCoeffs.size();
