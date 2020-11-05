@@ -6,7 +6,7 @@ Alternating Minimization Based Trajectory Generation for Quadrotor Aggressive Fl
 
 __AM-Traj__ is a __C++11__ [__header-only__](https://en.wikipedia.org/wiki/Header-only) library for generating large-scale piecewise polynomial trajectories for aggressive autonomous flights, with highlights on its superior computational efficiency and simultaneous spatial-temporal optimality. Besides, an extremely fast feasibility checker is designed for various kinds of constraints. All components in this framework leverage the algebraic convenience of polynomial trajectory optimization problem, thus our method is capable of computing a spatial-temporal optimal trajectory with 60 pieces within 5ms, i.e., 150Hz at least. You just need to include "am_traj.hpp" and "root_finder.hpp" in your code. __Please use the up-to-date master branch which may have a better performance than the one in our paper.__
 
-__Author__: Zhepei Wang and [Fei Gao](https://ustfei.com/) from the [ZJU Fast Lab](http://www.kivact.com/).
+__Author__: [Zhepei Wang](https://zhepeiwang.github.io/) and [Fei Gao](https://ustfei.com/) from the [ZJU Fast Lab](http://www.kivact.com/).
 
 __Related Papers__:
 
