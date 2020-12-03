@@ -993,7 +993,7 @@ inline std::set<double> solvePolynomial(const Eigen::VectorXd &coeffs, double lb
 // Closed-form solutions are employed for reduced_order < 5
 // isolation = true:
 //                    Sturm' theory and some geometrical property are employed to bracket each root
-//                    TOMS748 is employed to shrink the interval efficiently
+//                    Safe_Newton is employed to shrink the interval efficiently
 // isolation = false:
 //                    Eigen values of polynomial companion matrix are calculated
 //
