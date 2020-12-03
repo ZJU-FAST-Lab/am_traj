@@ -686,7 +686,7 @@ inline std::set<double> isolateRealRoots(const Eigen::VectorXd &coeffs, double l
     // Build Sturm sequence
     int len = monicCoeffs.size();
     double sturmSeqs[(RootFinderParam::highestOrder + 1) * (RootFinderParam::highestOrder + 1)];
-    int szSeq[RootFinderParam::highestOrder + 1];
+    int szSeq[RootFinderParam::highestOrder + 1] = {0}; // Explicit ini as zero (gcc may neglect this in -O3)
     double *offsetSeq[RootFinderParam::highestOrder + 1];
     int num = 0;
 
@@ -933,7 +933,7 @@ inline int countRoots(const Eigen::VectorXd &coeffs, double l, double r)
         int len = monicCoeffs.size();
         int order = len - 1;
         double sturmSeqs[(RootFinderParam::highestOrder + 1) * (RootFinderParam::highestOrder + 1)];
-        int szSeq[RootFinderParam::highestOrder + 1];
+        int szSeq[RootFinderParam::highestOrder + 1] = {0}; // Explicit ini as zero (gcc may neglect this in -O3)
         int num = 0;
 
         for (int i = 0; i < len; i++)
@@ -993,7 +993,7 @@ inline std::set<double> solvePolynomial(const Eigen::VectorXd &coeffs, double lb
 // Closed-form solutions are employed for reduced_order < 5
 // isolation = true:
 //                    Sturm' theory and some geometrical property are employed to bracket each root
-//                    Safe_Newton is employed to shrink the interval efficiently
+//                    Safe-Newton is employed to shrink the interval efficiently
 // isolation = false:
 //                    Eigen values of polynomial companion matrix are calculated
 //
