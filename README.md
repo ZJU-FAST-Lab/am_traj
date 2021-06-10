@@ -2,7 +2,9 @@
 
 Alternating Minimization Based Trajectory Generation for Quadrotor Aggressive Flight
 
-This repo is deprecated. For __local-planning__, it is encouraged to use our [__EGO-Planner__](https://github.com/ZJU-FAST-Lab/ego-planner). For __general-purpose multicopter trajectory optimization__, it is encouraged to check our solver [__GCOPTER__](https://github.com/ZJU-FAST-Lab/GCOPTER) if released.
+This repo is deprecated. 
+For __local-planning__, it is encouraged to use our [__EGO-Planner__](https://github.com/ZJU-FAST-Lab/ego-planner). 
+For __general-purpose multicopter trajectory optimization__, it is encouraged to check our solver [__GCOPTER__](https://github.com/ZJU-FAST-Lab/GCOPTER) if released.
 
 ## 0. About
 
